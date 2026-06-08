@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bethel Rental Property — Financial Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(145deg, #edf1f7 0%, #e5ecf5 100%);
+            background-attachment: fixed;
+            color: #1e293b;
+            min-height: 100vh;
+            padding: 28px 36px 44px;
+        }
+
+        /* ── Header ── */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #dde5f0;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .header h1 {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.6px;
+        }
+        .header-meta {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .status-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 4px;
+        }
+        .status-chip::before {
+            content: '';
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .as-of {
+            font-size: 12px;
+            font-weight: 500;
+            color: #64748b;
+            background: #ffffff;
+            border: 1px solid #dde5f0;
+            border-radius: 20px;
+            padding: 7px 16px;
+            white-space: nowrap;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        /* ── Note ── */
+        .note-box {
+            background: linear-gradient(90deg, #eff6ff 0%, #f8fbff 100%);
+            border: 1px solid #bfdbfe;
+            border-left: 4px solid #3b82f6;
+            border-radius: 10px;
+            padding: 11px 16px;
+            font-size: 12.5px;
+            color: #1d4ed8;
+            margin-bottom: 22px;
+            line-height: 1.7;
+        }
+
+        /* ── KPI Grid ── */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+        .kpi-card {
+            border-radius: 16px;
+            padding: 20px 18px 16px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid transparent;
+            box-shadow: 0 2px 10px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.04);
+            transition: box-shadow 0.25s ease, transform 0.25s ease;
+            cursor: default;
+        }
+        .kpi-card:hover {
+            box-shadow: 0 10px 30px rgba(15,23,42,0.11), 0 3px 8px rgba(15,23,42,0.07);
+            transform: translateY(-3px);
+        }
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            border-radius: 16px 16px 0 0;
+        }
+        .kpi-card.green  {
+            background: linear-gradient(150deg, #ffffff 50%, #f0fdf6 100%);
+            border-color: #d1fae5;
+        }
+        .kpi-card.green::before  { background: linear-gradient(90deg, #4ade80, #16a34a); }
+        .kpi-card.red    {
+            background: linear-gradient(150deg, #ffffff 50%, #fff5f5 100%);
+            border-color: #fecaca;
+        }
+        .kpi-card.red::before    { background: linear-gradient(90deg, #f87171, #dc2626); }
+        .kpi-card.indigo {
+            background: linear-gradient(150deg, #ffffff 50%, #f5f3ff 100%);
+            border-color: #ddd6fe;
+        }
+        .kpi-card.indigo::before { background: linear-gradient(90deg, #a5b4fc, #6366f1); }
+        .kpi-card.amber  {
+            background: linear-gradient(150deg, #ffffff 50%, #fffbeb 100%);
+            border-color: #fde68a;
+        }
+        .kpi-card.amber::before  { background: linear-gradient(90deg, #fcd34d, #f59e0b); }
+        .kpi-card.teal   {
+            background: linear-gradient(150deg, #ffffff 50%, #f0fdfa 100%);
+            border-color: #99f6e4;
+        }
+        .kpi-card.teal::before   { background: linear-gradient(90deg, #2dd4bf, #0d9488); }
+
+        .kpi-bg-icon {
+            position: absolute;
+            right: 10px;
+            bottom: 4px;
+            font-size: 52px;
+            line-height: 1;
+            opacity: 0.08;
+            pointer-events: none;
+            user-select: none;
+        }
+        .kpi-label {
+            font-size: 10px;
+            color: #94a3b8;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.09em;
+            margin-bottom: 10px;
+        }
+        .kpi-value {
+            font-size: 27px;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.8px;
+            line-height: 1.1;
+        }
+        .kpi-value.green  { color: #15803d; }
+        .kpi-value.red    { color: #dc2626; }
+        .kpi-value.amber  { color: #b45309; }
+        .kpi-sub {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 6px;
+            line-height: 1.5;
+        }
+        .coverage-bar {
+            margin-top: 10px;
+            height: 5px;
+            background: #fde68a;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+        .coverage-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #fbbf24, #d97706);
+            border-radius: 99px;
+        }
+
+        /* ── Chart Layouts ── */
+        .row { display: grid; gap: 16px; margin-bottom: 16px; }
+        .row-1 { grid-template-columns: 1fr; }
+        .row-2 { grid-template-columns: 3fr 2fr; }
+
+        .chart-card {
+            background: #ffffff;
+            border: 1px solid #e4eaf3;
+            border-radius: 16px;
+            padding: 22px 22px 18px;
+            box-shadow: 0 2px 10px rgba(15,23,42,0.06), 0 1px 3px rgba(15,23,42,0.04);
+            transition: box-shadow 0.25s ease;
+        }
+        .chart-card:hover {
+            box-shadow: 0 8px 24px rgba(15,23,42,0.09), 0 2px 6px rgba(15,23,42,0.05);
+        }
+        .chart-card h3 {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            margin-bottom: 18px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .chart-card h3 .dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            display: inline-block;
+        }
+        .chart-wrapper { position: relative; }
+
+        /* ── Insight Strip ── */
+        .insight-strip {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 18px;
+        }
+        .insight-card {
+            background: #ffffff;
+            border-radius: 14px;
+            padding: 17px 18px 17px 22px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 2px 10px rgba(15,23,42,0.06);
+            position: relative;
+            overflow: hidden;
+            border: 1px solid transparent;
+        }
+        .insight-card::before {
+            content: '';
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: 5px;
+            border-radius: 14px 0 0 14px;
+        }
+        .insight-card.amber-accent {
+            background: linear-gradient(90deg, #fffcf0 0%, #ffffff 40%);
+            border-color: #fde68a;
+        }
+        .insight-card.amber-accent::before { background: linear-gradient(180deg, #fcd34d, #f59e0b); }
+        .insight-card.red-accent {
+            background: linear-gradient(90deg, #fff8f8 0%, #ffffff 40%);
+            border-color: #fecaca;
+        }
+        .insight-card.red-accent::before   { background: linear-gradient(180deg, #f87171, #ef4444); }
+        .insight-card.slate-accent {
+            background: linear-gradient(90deg, #f8fafc 0%, #ffffff 40%);
+            border-color: #e2e8f0;
+        }
+        .insight-card.slate-accent::before { background: linear-gradient(180deg, #94a3b8, #64748b); }
+
+        .insight-icon {
+            width: 44px; height: 44px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+        }
+        .insight-icon.amber-bg  { background: #fef9c3; }
+        .insight-icon.red-bg    { background: #fee2e2; }
+        .insight-icon.slate-bg  { background: #f1f5f9; }
+        .insight-icon.indigo-bg { background: #eef2ff; }
+        .insight-card.indigo-accent {
+            background: linear-gradient(90deg, #eef2ff 0%, #ffffff 40%);
+            border-color: #c7d2fe;
+        }
+        .insight-card.indigo-accent::before { background: linear-gradient(180deg, #818cf8, #6366f1); }
+        .insight-text .label {
+            font-size: 10px; color: #94a3b8; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.08em;
+        }
+        .insight-text .val {
+            font-size: 19px; font-weight: 800; color: #0f172a;
+            margin-top: 3px; letter-spacing: -0.4px;
+        }
+        .insight-text .val.red   { color: #dc2626; }
+        .insight-text .val.green { color: #15803d; }
+        .insight-text .val.amber { color: #b45309; }
+        .insight-text .sub { font-size: 11px; color: #94a3b8; margin-top: 3px; line-height: 1.45; }
+
+        /* ── Table ── */
+        .table-wrapper { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th {
+            text-align: right;
+            padding: 10px 14px;
+            background: #f8fafc;
+            color: #94a3b8;
+            font-weight: 700;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border-bottom: 2px solid #e4eaf3;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+        }
+        th:first-child { text-align: left; }
+        td {
+            padding: 11px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #475569;
+            text-align: right;
+            white-space: nowrap;
+        }
+        td:first-child { text-align: left; color: #1e293b; font-weight: 600; }
+        tbody tr:nth-child(even) td { background: #fafbfc; }
+        tbody tr:hover td { background: #f0f4f9 !important; }
+        tr:last-child td { border-bottom: none; }
+        tr.total-row td {
+            background: #eef2f8;
+            color: #0f172a;
+            font-weight: 700;
+            border-top: 2px solid #dde5f0;
+            font-size: 13px;
+        }
+        tr.total-row:hover td { background: #e5ecf5 !important; }
+        .pos { color: #15803d; font-weight: 700; }
+        .neg { color: #dc2626; font-weight: 700; }
+        .dim { color: #cbd5e1; }
+
+        /* ── Tenant Timeline ── */
+        .tenant-bar {
+            background: #ffffff;
+            border: 1px solid #e4eaf3;
+            border-radius: 16px;
+            padding: 20px 22px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 10px rgba(15,23,42,0.06);
+        }
+        .tenant-bar h3 {
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tenant-bar h3::before {
+            content: '';
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #6366f1);
+            flex-shrink: 0;
+        }
+        .timeline {
+            display: flex;
+            gap: 5px;
+            align-items: stretch;
+            height: 46px;
+        }
+        .tl-seg {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #fff;
+            padding: 0 14px;
+            letter-spacing: 0.01em;
+        }
+        .tl-seg.geethika {
+            background: linear-gradient(90deg, #3b82f6, #6366f1);
+            flex: 5;
+            box-shadow: 0 2px 8px rgba(99,102,241,0.30);
+        }
+        .tl-seg.vacant {
+            background: #f1f5f9;
+            flex: 1;
+            color: #94a3b8;
+            border: 1.5px dashed #cbd5e1;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .tl-seg.shanik {
+            background: linear-gradient(90deg, #22c55e, #16a34a);
+            flex: 1;
+            box-shadow: 0 2px 8px rgba(34,197,94,0.30);
+        }
+        .tl-labels {
+            display: flex;
+            gap: 5px;
+            margin-top: 8px;
+            font-size: 10.5px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        .tl-labels span { flex: 1; text-align: center; }
+        .tl-labels span:first-child { flex: 5; }
+
+        /* ── Summary Table compact override ── */
+        .summary-table { font-size: 12px; }
+        .summary-table td { padding: 9px 10px; }
+
+        /* ── Colorful animated headers ── */
+        .summary-table thead th {
+            padding: 10px 10px;
+            font-size: 9.5px;
+            font-weight: 800;
+            border-bottom: none;
+            position: relative;
+            overflow: hidden;
+            transition: filter 0.2s ease, transform 0.15s ease;
+            cursor: default;
+        }
+        .summary-table thead th:hover {
+            filter: brightness(0.93);
+            transform: translateY(-1px);
+        }
+
+        /* shimmer sweep on header hover */
+        .summary-table thead th::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 60%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+            transition: left 0.45s ease;
+            pointer-events: none;
+        }
+        .summary-table thead th:hover::after { left: 150%; }
+
+        /* colored bottom accent bar */
+        .summary-table thead th::before {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 3px;
+            border-radius: 0;
+            transform: scaleX(0.4);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+        .summary-table thead th:hover::before { transform: scaleX(1); }
+
+        /* per-column colors */
+        .summary-table th:nth-child(1)  { background:#f1f5f9; color:#475569; }
+        .summary-table th:nth-child(1)::before  { background:#94a3b8; }
+
+        .summary-table th:nth-child(2)  { background:linear-gradient(160deg,#f0fdf4,#dcfce7); color:#15803d; }
+        .summary-table th:nth-child(2)::before  { background:#22c55e; }
+
+        .summary-table th:nth-child(3)  { background:linear-gradient(160deg,#f0fdfa,#ccfbf1); color:#0d9488; }
+        .summary-table th:nth-child(3)::before  { background:#14b8a6; }
+
+        .summary-table th:nth-child(4)  { background:linear-gradient(160deg,#ecfdf5,#d1fae5); color:#059669; }
+        .summary-table th:nth-child(4)::before  { background:#10b981; }
+
+        .summary-table th:nth-child(5)  { background:linear-gradient(160deg,#eef2ff,#e0e7ff); color:#4338ca; }
+        .summary-table th:nth-child(5)::before  { background:#6366f1; }
+
+        .summary-table th:nth-child(6)  { background:linear-gradient(160deg,#f5f3ff,#ede9fe); color:#7c3aed; }
+        .summary-table th:nth-child(6)::before  { background:#8b5cf6; }
+
+        .summary-table th:nth-child(7)  { background:linear-gradient(160deg,#fffbeb,#fef3c7); color:#b45309; }
+        .summary-table th:nth-child(7)::before  { background:#f59e0b; }
+
+        .summary-table th:nth-child(8)  { background:linear-gradient(160deg,#fdf4ff,#fae8ff); color:#9333ea; }
+        .summary-table th:nth-child(8)::before  { background:#a855f7; }
+
+        .summary-table th:nth-child(9)  { background:linear-gradient(160deg,#fff5f5,#fee2e2); color:#dc2626; }
+        .summary-table th:nth-child(9)::before  { background:#ef4444; }
+
+        .summary-table th:nth-child(10) { background:linear-gradient(160deg,#eff6ff,#dbeafe); color:#2563eb; }
+        .summary-table th:nth-child(10)::before { background:#3b82f6; }
+
+        /* ── Row entrance animation ── */
+        @keyframes rowFadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .summary-table tbody tr {
+            opacity: 0;
+            animation: rowFadeUp 0.4s ease forwards;
+        }
+        .summary-table tbody tr:nth-child(1) { animation-delay: 0.08s; }
+        .summary-table tbody tr:nth-child(2) { animation-delay: 0.16s; }
+        .summary-table tbody tr:nth-child(3) { animation-delay: 0.24s; }
+        .summary-table tbody tr:nth-child(4) { animation-delay: 0.32s; }
+        .summary-table tbody tr:nth-child(5) { animation-delay: 0.40s; }
+        .summary-table tbody tr:nth-child(6) { animation-delay: 0.48s; }
+        .summary-table tbody tr.total-row    { animation-delay: 0.58s; }
+
+        /* smooth row hover */
+        .summary-table tbody tr {
+            transition: background 0.15s ease;
+        }
+
+        /* ── Month Card Grid ── */
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+        }
+        .month-card {
+            border-radius: 14px;
+            border: 1px solid #e4eaf3;
+            overflow: hidden;
+            background: #ffffff;
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .month-card:hover {
+            box-shadow: 0 6px 20px rgba(15,23,42,0.09);
+            transform: translateY(-2px);
+        }
+        .mc-header {
+            padding: 10px 14px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #0f172a;
+            background: #f8fafc;
+            border-bottom: 1px solid #e4eaf3;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .mc-header .mc-month { letter-spacing: -0.2px; }
+        .mc-header .mc-cash {
+            font-size: 11px;
+            font-weight: 600;
+            color: #0d9488;
+            background: #f0fdfa;
+            border: 1px solid #99f6e4;
+            border-radius: 99px;
+            padding: 2px 8px;
+        }
+        .mc-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            padding: 13px 14px;
+            gap: 0 14px;
+        }
+        .mc-expenses {
+            border-left: 1px solid #f1f5f9;
+            padding-left: 14px;
+        }
+        .mc-section-title {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.09em;
+            color: #94a3b8;
+            margin-bottom: 7px;
+        }
+        .mc-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2px 0;
+            font-size: 11.5px;
+            color: #64748b;
+            gap: 6px;
+        }
+        .mc-row .mc-val {
+            font-weight: 600;
+            color: #1e293b;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        .mc-row.muted .mc-val { color: #cbd5e1; font-weight: 400; }
+        .mc-row.subtotal {
+            border-top: 1px solid #f1f5f9;
+            margin-top: 5px;
+            padding-top: 5px;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .mc-row.dep-row .mc-val { color: #6366f1; }
+        .mc-footer {
+            padding: 9px 14px;
+            font-size: 12.5px;
+            font-weight: 700;
+            border-top: 1px solid #e4eaf3;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .mc-footer.neg { background: #fff5f5; color: #dc2626; }
+        .mc-footer.pos { background: #f0fdf4; color: #15803d; }
+        .mc-totals-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 14px;
+            padding: 14px 16px;
+            background: #f0f4f8;
+            border-radius: 12px;
+            border: 1px solid #dde5f0;
+        }
+        .mc-total-item { text-align: center; }
+        .mc-total-item .tc-label {
+            font-size: 9.5px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.08em; color: #94a3b8; margin-bottom: 4px;
+        }
+        .mc-total-item .tc-val {
+            font-size: 16px; font-weight: 800; letter-spacing: -0.4px;
+        }
+
+        @media (max-width: 1200px) {
+            .kpi-grid { grid-template-columns: repeat(3, 1fr); }
+            .insight-strip { grid-template-columns: repeat(2, 1fr); }
+            .month-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 900px) {
+            body { padding: 16px 16px 32px; }
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+            .row-2 { grid-template-columns: 1fr; }
+            .insight-strip { grid-template-columns: 1fr; }
+            .month-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <div>
+            <h1>🏡 Bethel Rental Property</h1>
+            <div class="header-meta">
+                Financial Dashboard &nbsp;·&nbsp; Dec 2025 – May 2026 &nbsp;·&nbsp; Noor Properties
+                <span class="status-chip">Tenant Transition</span>
+            </div>
+        </div>
+        <div class="as-of">📅 As of May 30, 2026</div>
+    </div>
+
+    <!-- Note -->
+    <div class="note-box">
+        <strong>Note:</strong>&nbsp; Security deposits ($1,350 total) are shown as <em>Deposits / Liability</em> — they are refundable and excluded from Net P&L.
+        &nbsp;|&nbsp; Operating Income = Rent + App Fees + Storage only ($3,950). Net P&L is based on operating income vs expenses.
+        &nbsp;|&nbsp; May 2026: Geethika moved out — Shanik Woodson's lease has not started yet (app fee + deposit received only).
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+        <div class="kpi-card green">
+            <div class="kpi-bg-icon">💵</div>
+            <div class="kpi-label">Operating Income</div>
+            <div class="kpi-value green" id="kpi-op-income">—</div>
+            <div class="kpi-sub" id="kpi-op-income-sub">&nbsp;</div>
+        </div>
+        <div class="kpi-card indigo">
+            <div class="kpi-bg-icon">🔒</div>
+            <div class="kpi-label">Deposits / Liability</div>
+            <div class="kpi-value" id="kpi-deposits">—</div>
+            <div class="kpi-sub">Refundable · not profit</div>
+        </div>
+        <div class="kpi-card teal">
+            <div class="kpi-bg-icon">🏦</div>
+            <div class="kpi-label">Total Cash Received</div>
+            <div class="kpi-value" style="color:#0d9488;" id="kpi-total-cash">—</div>
+            <div class="kpi-sub">Operating income<br>+ security deposits</div>
+        </div>
+        <div class="kpi-card red">
+            <div class="kpi-bg-icon">📊</div>
+            <div class="kpi-label">Total Expenses</div>
+            <div class="kpi-value red" id="kpi-total-exp">—</div>
+            <div class="kpi-sub" id="kpi-total-exp-sub">&nbsp;</div>
+        </div>
+        <div class="kpi-card red">
+            <div class="kpi-bg-icon">📉</div>
+            <div class="kpi-label">Net P&amp;L (Operating)</div>
+            <div class="kpi-value red" id="kpi-net-pl">—</div>
+            <div class="kpi-sub">Operating income minus<br>expenses (excl. deposits)</div>
+        </div>
+    </div>
+
+
+    <!-- Tenant Timeline -->
+    <div class="tenant-bar">
+        <h3>Tenant Timeline</h3>
+        <div class="timeline">
+            <div class="tl-seg geethika">Geethika (Dec 2025 – Apr 2026)</div>
+            <div class="tl-seg vacant">—</div>
+            <div class="tl-seg shanik">Shanik</div>
+        </div>
+        <div class="tl-labels">
+            <span>Dec 2025 – Apr 2026 &nbsp;·&nbsp; $750–800/mo rent</span>
+            <span>Transition</span>
+            <span>Jun+</span>
+        </div>
+    </div>
+
+    <!-- Bar chart full width -->
+    <div class="row row-1">
+        <div class="chart-card">
+            <h3><span class="dot" style="background:linear-gradient(135deg,#22c55e,#ef4444);"></span>Monthly Income vs Expenses</h3>
+            <div class="chart-wrapper" style="height: 260px;">
+                <canvas id="incomeVsExpenses"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Income + Expense donuts side by side -->
+    <div class="row" style="grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 18px;">
+        <div class="chart-card">
+            <h3><span class="dot" style="background:linear-gradient(135deg,#22c55e,#0ea5e9);"></span>Total Income Breakdown</h3>
+            <div class="chart-wrapper" style="height: 260px;">
+                <canvas id="incomeDonut"></canvas>
+            </div>
+        </div>
+        <div class="chart-card">
+            <h3><span class="dot" style="background:linear-gradient(135deg,#6366f1,#a855f7);"></span>Total Expense Breakdown</h3>
+            <div class="chart-wrapper" style="height: 260px;">
+                <canvas id="expenseDonut"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Summary Table -->
+    <div class="row row-1">
+    <div class="chart-card">
+        <h3><span class="dot" style="background:linear-gradient(135deg,#6366f1,#3b82f6);"></span>Monthly Summary</h3>
+        <div class="table-wrapper">
+            <table class="summary-table">
+                <thead>
+                    <tr>
+                        <th>Month</th>
+                        <th>Rent</th>
+                        <th>Other Income</th>
+                        <th>Total Income</th>
+                        <th>Deposits ⚠</th>
+                        <th>Mortgage</th>
+                        <th title="Gas + Electricity + Internet">Utilities ℹ</th>
+                        <th title="Home Setup + Maintenance + Background Check">Other Exp. ℹ</th>
+                        <th>Total Exp.</th>
+                        <th>Net P&amp;L</th>
+                    </tr>
+                </thead>
+                <tbody id="summaryTbody"></tbody>
+            </table>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:#94a3b8;">
+            ℹ Hover <strong>Utilities</strong> cell to see Gas / Electricity / Internet breakdown &nbsp;·&nbsp; ⚠ Deposits are refundable liabilities, excluded from Net P&L
+        </div>
+    </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- Assumption Analysis                                       -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <div style="margin-top:28px;">
+
+        <!-- Section title -->
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+            <div style="flex:1;height:1px;background:#dde5f0;"></div>
+            <div style="display:flex;align-items:center;gap:10px;white-space:nowrap;">
+                <span style="font-size:20px;font-weight:800;color:#0f172a;letter-spacing:-0.3px;">📈 Assumption Analysis</span>
+                <span style="background:#fffbeb;color:#b45309;border:1px solid #fde68a;padding:4px 12px;border-radius:999px;font-size:11px;font-weight:700;">⚠ Projected — Not Actual Data</span>
+            </div>
+            <div style="flex:1;height:1px;background:#dde5f0;"></div>
+        </div>
+
+        <!-- Assumption note -->
+        <div style="background:linear-gradient(90deg,#fffbeb,#fff8f0);border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:10px;padding:11px 16px;font-size:12.5px;color:#92400e;margin-bottom:18px;line-height:1.7;">
+            <strong>Assumptions used:</strong>&nbsp; Monthly rent = $2,200 &nbsp;·&nbsp; Mortgage = $1,887.36/mo (fixed) &nbsp;·&nbsp; Utilities paid by tenant &nbsp;·&nbsp; No other major expenses &nbsp;·&nbsp; Starting deficit = <strong>$9,973.40</strong> (Dec 2025 – May 2026 losses)
+        </div>
+
+        <!-- 4 KPI cards -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px;">
+            <div class="kpi-card green">
+                <div class="kpi-bg-icon">📈</div>
+                <div class="kpi-label">Monthly Surplus (from Jun 2026)</div>
+                <div class="kpi-value green" id="kpi-a-surplus">—</div>
+                <div class="kpi-sub">Rent $2,200 − Mortgage $1,887.36</div>
+            </div>
+            <div class="kpi-card red">
+                <div class="kpi-bg-icon">⛳</div>
+                <div class="kpi-label">Total Deficit to Recover</div>
+                <div class="kpi-value red" id="kpi-a-deficit">—</div>
+                <div class="kpi-sub" id="kpi-a-deficit-sub">&nbsp;</div>
+            </div>
+            <div class="kpi-card amber">
+                <div class="kpi-bg-icon">🎯</div>
+                <div class="kpi-label">Expected Break-even Month</div>
+                <div class="kpi-value amber" id="kpi-a-breakeven">—</div>
+                <div class="kpi-sub">First month in cumulative profit</div>
+            </div>
+            <div class="kpi-card indigo">
+                <div class="kpi-bg-icon">📅</div>
+                <div class="kpi-label">Months to Break-even</div>
+                <div class="kpi-value" id="kpi-a-months">—</div>
+                <div class="kpi-sub" id="kpi-a-months-sub">&nbsp;</div>
+            </div>
+        </div>
+
+        <!-- Recovery line chart -->
+        <div class="row row-1">
+            <div class="chart-card">
+                <h3><span class="dot" style="background:linear-gradient(135deg,#ef4444,#22c55e);"></span>Cumulative P&L Recovery — Jun 2026 to Jan 2029</h3>
+                <div class="chart-wrapper" style="height:300px;">
+                    <canvas id="recoveryChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 12-month projection table -->
+        <div class="row row-1">
+            <div class="chart-card">
+                <h3><span class="dot" style="background:linear-gradient(135deg,#22c55e,#0d9488);"></span>Monthly Projection — Jun 2026 to May 2027</h3>
+                <div class="table-wrapper">
+                    <table class="summary-table">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Rent Income</th>
+                                <th>Mortgage</th>
+                                <th>Monthly Surplus</th>
+                                <th>Cumulative P&amp;L</th>
+                            </tr>
+                        </thead>
+                        <tbody id="projectionTbody"></tbody>
+                    </table>
+                </div>
+                <div style="margin-top:10px;font-size:11px;color:#94a3b8;">
+                    Cumulative P&L carries forward from the −$9,973.40 historical deficit. Break-even reached in January 2029 (month 32).
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+<div id="expenseTooltip" style="
+    position: fixed;
+    background: rgba(15, 23, 42, 0.97);
+    color: #e2e8f0;
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 12px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    pointer-events: none;
+    z-index: 9999;
+    display: none;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    border: 1px solid rgba(255,255,255,0.07);
+    min-width: 250px;
+    max-width: 340px;
+    line-height: 1.55;
+"></div>
+
+<script>
+    // ── Data ──────────────────────────────────────────────────────────────────
+
+    const months = ['Dec 2025', 'Jan 2026', 'Feb 2026', 'Mar 2026', 'Apr 2026', 'May 2026'];
+
+    const income = {
+        rent:     [800,   750,   750,   750,   750,   0],
+        other:    [55,    0,     40,    0,     0,     55],    // operating: app fees + storage only
+        deposits: [250,   0,     0,     0,     0,     1100],  // liability: security deposits
+    };
+
+    const exp = {
+        mortgage:    [0,       1887.36, 1887.36, 1887.36, 1887.36, 1887.36],
+        gas:         [0,       272.43,  248.89,  157.00,  157.00,  157.00],
+        electricity: [0,       97.70,   128.58,  62.00,   62.00,   62.00],
+        internet:    [40.00,   40.00,   40.00,   40.00,   40.00,   40.00],
+        homeSetup:   [1764.71, 0,       529.26,  0,       0,       0],      // appliances, furniture, equipment
+        maintenance: [0,       468.03,  0,       0,       0,       0],      // contractor payment only
+        bgCheck:     [40.00,   0,       0,       0,       0,       40.00],  // tenant background checks
+    };
+
+    const catColors = {
+        mortgage:    '#6366f1',
+        gas:         '#f97316',
+        electricity: '#eab308',
+        internet:    '#0ea5e9',
+        homeSetup:   '#10b981',
+        maintenance: '#f43f5e',
+        bgCheck:     '#94a3b8',
+    };
+
+    const catLabels = {
+        mortgage:    'Mortgage',
+        gas:         'Gas',
+        electricity: 'Electricity',
+        internet:    'Internet',
+        homeSetup:   'Home Setup',
+        maintenance: 'Maintenance',
+        bgCheck:     'Background Check',
+    };
+
+    const operatingIncome = months.map((_, i) => income.rent[i] + income.other[i]);
+    const depositsArr     = income.deposits;
+    const totalCash       = months.map((_, i) => operatingIncome[i] + depositsArr[i]);
+    const totalExpense    = months.map((_, i) =>
+        Object.values(exp).reduce((sum, arr) => sum + arr[i], 0)
+    );
+    // P&L uses operating income only — deposits are liabilities, not profit
+    const netPnL = months.map((_, i) => operatingIncome[i] - totalExpense[i]);
+
+    const fmt = (n) => n === 0 ? '—' : '$' + n.toFixed(2);
+    const fmtK = (n) => '$' + n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+    // ── Shared chart options ──────────────────────────────────────────────────
+
+    const gridColor = '#f1f5f9';
+    const tickColor = '#94a3b8';
+    const axisColor = '#e2e8f0';
+
+    const baseScales = {
+        x: {
+            ticks: { color: tickColor, font: { size: 11 } },
+            grid:  { color: gridColor },
+            border: { color: axisColor },
+        },
+        y: {
+            ticks: {
+                color: tickColor,
+                font: { size: 11 },
+                callback: v => '$' + v.toLocaleString()
+            },
+            grid:  { color: '#e2e8f0' },
+            border: { color: axisColor },
+        }
+    };
+
+    // ── Chart 1: Income vs Expenses — stacked income groups ──────────────────
+
+    const operatingBreakdown = [
+        ['  · Rent:                  $800.00', '  · App Fee (Geethika):   $55.00'],
+        ['  · Rent:                  $750.00'],
+        ['  · Rent:                  $750.00', '  · Storage Room:         $40.00'],
+        ['  · Rent:                  $750.00'],
+        ['  · Rent:                  $750.00'],
+        ['  · No rent (transition)', '  · App Fee (Shanik):     $55.00'],
+    ];
+    const depositBreakdown = [
+        ['  · Geethika (Dec 2025):          $250.00'],
+        [], [], [], [],
+        ['  · Shanik Woodson (May 2026): $1,100.00'],
+    ];
+
+    new Chart(document.getElementById('incomeVsExpenses'), {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: [
+                {
+                    label: 'Operating Income',
+                    data: operatingIncome,
+                    backgroundColor: 'rgba(34, 197, 94, 0.85)',
+                    borderColor: '#22c55e',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    stack: 'cash',
+                },
+                {
+                    label: 'Security Deposits (Liability)',
+                    data: depositsArr,
+                    backgroundColor: 'rgba(99, 102, 241, 0.70)',
+                    borderColor: '#6366f1',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    stack: 'cash',
+                },
+                {
+                    label: 'Total Expenses',
+                    data: totalExpense,
+                    backgroundColor: 'rgba(239, 68, 68, 0.85)',
+                    borderColor: '#ef4444',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    stack: 'expenses',
+                },
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { labels: { color: '#475569', font: { size: 12 }, padding: 20 } },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => {
+                            if (ctx.parsed.y === 0) return null;
+                            if (ctx.dataset.label === 'Operating Income') {
+                                return [
+                                    ` Operating Income: $${ctx.parsed.y.toFixed(2)}`,
+                                    ' ─────────────────────────',
+                                    ...operatingBreakdown[ctx.dataIndex],
+                                ];
+                            }
+                            if (ctx.dataset.label === 'Security Deposits (Liability)') {
+                                return [
+                                    ` Deposits (Liability): $${ctx.parsed.y.toFixed(2)}`,
+                                    '  ⚠ Refundable — excluded from P&L',
+                                    ...depositBreakdown[ctx.dataIndex],
+                                ];
+                            }
+                            if (ctx.dataset.label === 'Total Expenses') {
+                                const i = ctx.dataIndex;
+                                const lines = [
+                                    ` Total Expenses: $${ctx.parsed.y.toFixed(2)}`,
+                                    ' ─────────────────────────',
+                                ];
+                                if (exp.mortgage[i]    > 0) lines.push(`  · Mortgage:          $${exp.mortgage[i].toFixed(2)}`);
+                                if (exp.gas[i]         > 0) lines.push(`  · Gas:               $${exp.gas[i].toFixed(2)}`);
+                                if (exp.electricity[i] > 0) lines.push(`  · Electricity:       $${exp.electricity[i].toFixed(2)}`);
+                                lines.push(                              `  · Internet:          $${exp.internet[i].toFixed(2)}`);
+                                if (exp.homeSetup[i]   > 0) lines.push(`  · Home Setup:        $${exp.homeSetup[i].toFixed(2)}`);
+                                if (exp.maintenance[i] > 0) lines.push(`  · Maintenance:       $${exp.maintenance[i].toFixed(2)}`);
+                                if (exp.bgCheck[i]     > 0) lines.push(`  · Background Check:  $${exp.bgCheck[i].toFixed(2)}`);
+                                return lines;
+                            }
+                            return ` $${ctx.parsed.y.toFixed(2)}`;
+                        },
+                        filter: item => item.parsed.y > 0,
+                    }
+                }
+            },
+            scales: {
+                x: { ...baseScales.x, stacked: true },
+                y: { ...baseScales.y, stacked: true },
+            },
+        }
+    });
+
+    // ── Chart 2: Expense Donut ────────────────────────────────────────────────
+
+    const catKeys   = Object.keys(exp);
+    const catTotals = catKeys.map(k => exp[k].reduce((a, b) => a + b, 0));
+    const grandTotal = catTotals.reduce((a, b) => a + b, 0);
+
+    const expTooltipEl = document.getElementById('expenseTooltip');
+
+    function ttRow(label, value) {
+        return `<div style="display:flex;justify-content:space-between;gap:28px;padding:2px 0;">
+            <span style="color:#94a3b8;">${label}</span>
+            <span style="color:#f1f5f9;font-variant-numeric:tabular-nums;white-space:nowrap;">${value}</span>
+        </div>`;
+    }
+
+    function ttSection(title) {
+        return `<div style="color:#64748b;font-size:10px;font-weight:700;text-transform:uppercase;
+            letter-spacing:0.07em;margin:10px 0 5px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.07);">
+            ${title}
+        </div>`;
+    }
+
+    function externalExpTooltip({ chart, tooltip }) {
+        if (tooltip.opacity === 0) { expTooltipEl.style.display = 'none'; return; }
+        const dp = tooltip.dataPoints?.[0];
+        if (!dp) return;
+
+        const pct  = ((dp.parsed / grandTotal) * 100).toFixed(1);
+        const col  = catColors[catKeys[dp.dataIndex]];
+        const dot  = `<span style="display:inline-block;width:9px;height:9px;border-radius:50%;
+                       background:${col};margin-right:7px;vertical-align:middle;"></span>`;
+
+        let html = `<div style="font-weight:700;font-size:13px;color:#f1f5f9;margin-bottom:6px;">
+            ${dot}${dp.label}
+            <span style="color:${col};margin-left:4px;">$${dp.parsed.toFixed(2)}</span>
+            <span style="color:#475569;font-weight:400;font-size:11px;margin-left:4px;">(${pct}%)</span>
+        </div>`;
+
+        if (dp.label === 'Home Setup') {
+            html += ttSection('Appliances &amp; Equipment — Dec 2025');
+            html += ttRow('Washer / Dryer / Microwave', '$1,426.25');
+            html += ttRow('Storage Cupboard', '$147.38');
+            html += ttRow('Interior + Exterior Locks', '$76.54');
+            html += ttRow('Internet Router', '$69.54');
+            html += ttRow('Dryer Vent, Clamps, Rod', '$45.00');
+            html += ttSection('Furniture &amp; Equipment — Feb 2026');
+            html += ttRow('Dining Table', '$250.00');
+            html += ttRow('Couch', '$200.00');
+            html += ttRow('Shower Curtain Rod', '$15.66');
+            html += ttRow('Window Tension Rod', '$9.94');
+            html += ttRow('Flashlight', '$9.98');
+            html += ttRow('Toolkit', '$43.68');
+        }
+        if (dp.label === 'Maintenance') {
+            html += ttSection('Contractor Work');
+            html += ttRow('Contractor Payment (Jan 2026)', '$468.03');
+        }
+        if (dp.label === 'Background Check') {
+            html += ttSection('Tenant Screening');
+            html += ttRow('Geethika (Dec 2025)', '$40.00');
+            html += ttRow('Shanik Woodson (May 2026)', '$40.00');
+        }
+
+        // Render off-screen first to measure height
+        expTooltipEl.innerHTML = html;
+        expTooltipEl.style.left = '-9999px';
+        expTooltipEl.style.top  = '-9999px';
+        expTooltipEl.style.display = 'block';
+
+        const tw = expTooltipEl.offsetWidth;
+        const th = expTooltipEl.offsetHeight;
+        const rect = chart.canvas.getBoundingClientRect();
+
+        let x = rect.left + tooltip.caretX + 16;
+        let y = rect.top  + tooltip.caretY - th / 2;
+
+        // Flip left if overflowing right edge
+        if (x + tw > window.innerWidth - 12) x = rect.left + tooltip.caretX - tw - 16;
+        // Clamp vertically
+        if (y + th > window.innerHeight - 12) y = window.innerHeight - th - 12;
+        if (y < 12) y = 12;
+
+        expTooltipEl.style.left = x + 'px';
+        expTooltipEl.style.top  = y + 'px';
+    }
+
+    new Chart(document.getElementById('expenseDonut'), {
+        type: 'doughnut',
+        data: {
+            labels: catKeys.map(k => catLabels[k]),
+            datasets: [{
+                data: catTotals,
+                backgroundColor: catKeys.map(k => catColors[k]),
+                borderColor: '#ffffff',
+                borderWidth: 3,
+                hoverOffset: 8,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '62%',
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: { color: '#475569', font: { size: 11 }, padding: 10, boxWidth: 12, boxHeight: 12 }
+                },
+                tooltip: {
+                    enabled: false,
+                    external: externalExpTooltip,
+                }
+            }
+        }
+    });
+
+    // ── Chart 3: Income Donut ────────────────────────────────────────────────
+
+    const incomeData   = [3800, 40, 110, 1350];
+    const incomeLabels = ['Rent', 'Storage Room', 'Application Fees', 'Deposits (Liability)'];
+    const incomeColors = ['#22c55e', '#0ea5e9', '#f59e0b', '#6366f1'];
+    const incomeTotalAll = incomeData.reduce((a, b) => a + b, 0);
+
+    new Chart(document.getElementById('incomeDonut'), {
+        type: 'doughnut',
+        data: {
+            labels: incomeLabels,
+            datasets: [{
+                data: incomeData,
+                backgroundColor: incomeColors,
+                borderColor: '#ffffff',
+                borderWidth: 3,
+                hoverOffset: 8,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '62%',
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: { color: '#475569', font: { size: 11 }, padding: 10, boxWidth: 12, boxHeight: 12 }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => {
+                            const pct = ((ctx.parsed / incomeTotalAll) * 100).toFixed(1);
+                            if (ctx.label === 'Rent') {
+                                return [
+                                    ` Total Rent: $${ctx.parsed.toFixed(2)} (${pct}%)`,
+                                    '   · Dec 2025:        $800.00',
+                                    '   · Jan 2026:        $750.00',
+                                    '   · Feb 2026:        $750.00',
+                                    '   · Mar 2026:        $750.00',
+                                    '   · Apr 2026:        $750.00',
+                                ];
+                            }
+                            if (ctx.label === 'Storage Room') {
+                                return [
+                                    ` Total Storage: $${ctx.parsed.toFixed(2)} (${pct}%)`,
+                                    '   · Feb 2026 only: $40.00',
+                                ];
+                            }
+                            if (ctx.label === 'Application Fees') {
+                                return [
+                                    ` Total App Fees: $${ctx.parsed.toFixed(2)} (${pct}%)`,
+                                    '   · Geethika (Dec 2025):       $55.00',
+                                    '   · Shanik Woodson (May 2026): $55.00',
+                                ];
+                            }
+                            if (ctx.label === 'Deposits (Liability)') {
+                                return [
+                                    ` Deposits (Liability): $${ctx.parsed.toFixed(2)} (${pct}%)`,
+                                    '   ⚠  Refundable — NOT counted as profit',
+                                    '   · Geethika (Dec 2025):       $250.00',
+                                    '   · Shanik Woodson (May 2026): $1,100.00',
+                                ];
+                            }
+                            return ` $${ctx.parsed.toFixed(2)} (${pct}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // ── Monthly Summary Table ─────────────────────────────────────────────────
+
+    const tbody  = document.getElementById('summaryTbody');
+    const sumArr = arr => arr.reduce((a, b) => a + b, 0);
+
+    // ── KPI Cards — auto-computed ─────────────────────────────────────────────
+
+    const kpiAbs = n => Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const kpiFmt = n => (n < 0 ? '−$' : '$') + kpiAbs(n);
+
+    const kpiOpInc  = sumArr(operatingIncome);
+    const kpiDep    = sumArr(depositsArr);
+    const kpiCash   = kpiOpInc + kpiDep;
+    const kpiExp    = sumArr(totalExpense);
+    const kpiNetPL  = sumArr(netPnL);
+
+    document.getElementById('kpi-op-income').textContent  = kpiFmt(kpiOpInc);
+    document.getElementById('kpi-deposits').textContent   = kpiFmt(kpiDep);
+    document.getElementById('kpi-total-cash').textContent = kpiFmt(kpiCash);
+    document.getElementById('kpi-total-exp').textContent  = kpiFmt(kpiExp);
+    document.getElementById('kpi-net-pl').textContent     = kpiFmt(kpiNetPL);
+
+    document.getElementById('kpi-op-income-sub').innerHTML =
+        `Rent $${kpiAbs(sumArr(income.rent))} · Other $${kpiAbs(sumArr(income.other))}`;
+    document.getElementById('kpi-total-exp-sub').innerHTML =
+        `All operating costs<br>${months[0]} – ${months[months.length - 1]}`;
+
+    const otherIncomeTip = [
+        'App Fee — Geethika: $55.00',
+        '',
+        'Storage Room (Feb only): $40.00',
+        '',
+        '',
+        'App Fee — Shanik Woodson: $55.00',
+    ];
+
+    months.forEach((m, i) => {
+        const opInc     = operatingIncome[i];
+        const dep       = depositsArr[i];
+        const tExp      = totalExpense[i];
+        const net       = netPnL[i];
+        const utilities = exp.gas[i] + exp.electricity[i] + exp.internet[i];
+        const utilTip   = `Gas: ${fmt(exp.gas[i])}  |  Electricity: ${fmt(exp.electricity[i])}  |  Internet: ${fmt(exp.internet[i])}`;
+        const otherExp  = exp.homeSetup[i] + exp.maintenance[i] + exp.bgCheck[i];
+        const otherTip  = `Home Setup: ${fmt(exp.homeSetup[i])}  |  Maintenance: ${fmt(exp.maintenance[i])}  |  Background Check: ${fmt(exp.bgCheck[i])}`;
+
+        const r = document.createElement('tr');
+        r.innerHTML = `
+            <td>${m}</td>
+            <td class="${income.rent[i] > 0 ? 'pos' : 'dim'}">${fmt(income.rent[i])}</td>
+            <td class="${income.other[i] > 0 ? 'pos' : 'dim'}" ${income.other[i] > 0 ? `title="${otherIncomeTip[i]}" style="cursor:help;"` : ''}>${fmt(income.other[i])}</td>
+            <td class="pos">$${opInc.toFixed(2)}</td>
+            <td style="color:${dep > 0 ? '#6366f1' : '#cbd5e1'};font-weight:${dep > 0 ? '700' : '400'};">${dep > 0 ? '$' + dep.toFixed(2) : '—'}</td>
+            <td class="${exp.mortgage[i] > 0 ? '' : 'dim'}">${fmt(exp.mortgage[i])}</td>
+            <td title="${utilTip}" style="cursor:help;">${utilities > 0 ? '$' + utilities.toFixed(2) : '—'}</td>
+            <td title="${otherTip}" style="cursor:help;" class="${otherExp > 0 ? '' : 'dim'}">${otherExp > 0 ? '$' + otherExp.toFixed(2) : '—'}</td>
+            <td class="neg">$${tExp.toFixed(2)}</td>
+            <td class="${net >= 0 ? 'pos' : 'neg'}">$${net.toFixed(2)}</td>
+        `;
+        tbody.appendChild(r);
+    });
+
+    // Totals row
+    const totOp  = sumArr(operatingIncome);
+    const totDep = sumArr(depositsArr);
+    const totExp = sumArr(totalExpense);
+    const totNet = sumArr(netPnL);
+    const totUtil     = sumArr(exp.gas) + sumArr(exp.electricity) + sumArr(exp.internet);
+    const totUtilTip  = `Gas: $${sumArr(exp.gas).toFixed(2)}  |  Electricity: $${sumArr(exp.electricity).toFixed(2)}  |  Internet: $${sumArr(exp.internet).toFixed(2)}`;
+    const totOther    = sumArr(exp.homeSetup) + sumArr(exp.maintenance) + sumArr(exp.bgCheck);
+    const totOtherTip = `Home Setup: $${sumArr(exp.homeSetup).toFixed(2)}  |  Maintenance: $${sumArr(exp.maintenance).toFixed(2)}  |  Background Check: $${sumArr(exp.bgCheck).toFixed(2)}`;
+    const tr = document.createElement('tr');
+    tr.className = 'total-row';
+    tr.innerHTML = `
+        <td>TOTAL</td>
+        <td class="pos">$${sumArr(income.rent).toFixed(2)}</td>
+        <td class="pos">$${sumArr(income.other).toFixed(2)}</td>
+        <td class="pos">$${totOp.toFixed(2)}</td>
+        <td style="color:#6366f1;font-weight:700;">$${totDep.toFixed(2)}</td>
+        <td>$${sumArr(exp.mortgage).toFixed(2)}</td>
+        <td title="${totUtilTip}" style="cursor:help;">$${totUtil.toFixed(2)}</td>
+        <td title="${totOtherTip}" style="cursor:help;">$${totOther.toFixed(2)}</td>
+        <td class="neg">$${totExp.toFixed(2)}</td>
+        <td class="${totNet >= 0 ? 'pos' : 'neg'}">$${totNet.toFixed(2)}</td>
+    `;
+    tbody.appendChild(tr);
+
+
+    // ── Assumption Analysis ────────────────────────────────────────────────────
+
+    const assumptionRent     = 2200;
+    const assumptionMortgage = 1887.36;
+    const monthlySurplus     = assumptionRent - assumptionMortgage;
+    const startDeficit       = parseFloat(sumArr(netPnL).toFixed(2));
+    const breakEvenMonths    = Math.ceil(Math.abs(startDeficit) / monthlySurplus);
+
+    // ── Populate assumption KPI cards ─────────────────────────────
+    const beDate = new Date(2026, 4 + breakEvenMonths);
+    const beDateLabel = beDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    const beYears  = Math.floor(breakEvenMonths / 12);
+    const beMos    = breakEvenMonths % 12;
+
+    document.getElementById('kpi-a-surplus').textContent   = `+$${monthlySurplus.toFixed(2)}`;
+    document.getElementById('kpi-a-deficit').textContent   = `$${kpiAbs(Math.abs(startDeficit))}`;
+    document.getElementById('kpi-a-deficit-sub').innerHTML = `All losses from ${months[0]} – ${months[months.length - 1]}`;
+    document.getElementById('kpi-a-breakeven').textContent = beDateLabel;
+    document.getElementById('kpi-a-months').textContent    = `${breakEvenMonths} months`;
+    document.getElementById('kpi-a-months-sub').innerHTML  = `From Jun 2026 · ${beYears} yr${beYears !== 1 ? 's' : ''} ${beMos} mo`;
+
+    // ── Recovery chart data ────────────────────────────────────────
+    const recoveryLabels = ['Now'];
+    const recoveryData   = [startDeficit];
+
+    for (let i = 1; i <= breakEvenMonths; i++) {
+        const d = new Date(2026, 4 + i);   // i=1 → month 5 (June 2026)
+        recoveryLabels.push(d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }));
+        recoveryData.push(parseFloat((startDeficit + i * monthlySurplus).toFixed(2)));
+    }
+
+    new Chart(document.getElementById('recoveryChart'), {
+        type: 'line',
+        data: {
+            labels: recoveryLabels,
+            datasets: [
+                {
+                    label: 'Cumulative P&L',
+                    data: recoveryData,
+                    borderWidth: 2.5,
+                    tension: 0.35,
+                    fill: true,
+                    backgroundColor: 'rgba(99,102,241,0.06)',
+                    pointRadius: recoveryData.map((_, i) => (i === 0 || i === breakEvenMonths) ? 7 : 2),
+                    pointBackgroundColor: recoveryData.map(v => v >= 0 ? '#22c55e' : '#ef4444'),
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 1.5,
+                    segment: {
+                        borderColor: ctx => ctx.p1.parsed.y >= 0 ? '#22c55e' : '#ef4444',
+                    },
+                },
+                {
+                    label: 'Break-even Line',
+                    data: new Array(breakEvenMonths + 1).fill(0),
+                    borderColor: '#64748b',
+                    borderWidth: 1.5,
+                    borderDash: [6, 4],
+                    pointRadius: 0,
+                    fill: false,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { labels: { color: '#475569', font: { size: 11 }, padding: 16 } },
+                tooltip: {
+                    filter: item => item.dataset.label !== 'Break-even Line',
+                    callbacks: {
+                        label: ctx => {
+                            const v = ctx.parsed.y;
+                            return ` ${v >= 0 ? 'Cumulative Profit' : 'Deficit Remaining'}: ${v < 0 ? '−' : '+'}$${Math.abs(v).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#94a3b8', font: { size: 10 }, maxRotation: 45, minRotation: 45 },
+                    grid: { color: '#f1f5f9' },
+                    border: { color: '#e2e8f0' },
+                },
+                y: {
+                    ticks: {
+                        color: '#94a3b8',
+                        font: { size: 11 },
+                        callback: v => (v < 0 ? '−$' : '+$') + Math.abs(v).toLocaleString()
+                    },
+                    grid: { color: '#e2e8f0' },
+                    border: { color: '#e2e8f0' },
+                }
+            }
+        }
+    });
+
+    // ── 12-month projection table (Jun 2026 – May 2027) ───────────
+    const projTbody = document.getElementById('projectionTbody');
+    let projCum = startDeficit;
+
+    for (let i = 1; i <= 12; i++) {
+        const d = new Date(2026, 4 + i);
+        const monthLabel = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        projCum = parseFloat((projCum + monthlySurplus).toFixed(2));
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${monthLabel}</td>
+            <td class="pos">$${assumptionRent.toFixed(2)}</td>
+            <td>$${assumptionMortgage.toFixed(2)}</td>
+            <td class="pos">+$${monthlySurplus.toFixed(2)}</td>
+            <td class="${projCum >= 0 ? 'pos' : 'neg'}">${projCum >= 0 ? '+' : ''}$${projCum.toFixed(2)}</td>
+        `;
+        projTbody.appendChild(tr);
+    }
+
+</script>
+</body>
+</html>
