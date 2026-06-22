@@ -505,7 +505,8 @@
         .summary-table tbody tr:nth-child(4) { animation-delay: 0.32s; }
         .summary-table tbody tr:nth-child(5) { animation-delay: 0.40s; }
         .summary-table tbody tr:nth-child(6) { animation-delay: 0.48s; }
-        .summary-table tbody tr.total-row    { animation-delay: 0.58s; }
+        .summary-table tbody tr:nth-child(7) { animation-delay: 0.56s; }
+        .summary-table tbody tr.total-row    { animation-delay: 0.66s; }
 
         /* smooth row hover */
         .summary-table tbody tr {
@@ -643,18 +644,18 @@
         <div>
             <h1>🏡 Bethel Rental Property</h1>
             <div class="header-meta">
-                Financial Dashboard &nbsp;·&nbsp; Dec 2025 – May 2026 &nbsp;·&nbsp; Noor Properties
+                Financial Dashboard &nbsp;·&nbsp; Dec 2025 – Jun 2026 &nbsp;·&nbsp; Noor Properties
                 <span class="status-chip">Tenant Transition</span>
             </div>
         </div>
-        <div class="as-of">📅 As of May 30, 2026</div>
+        <div class="as-of">📅 As of Jun 21, 2026</div>
     </div>
 
     <!-- Note -->
     <div class="note-box">
         <strong>Note:</strong>&nbsp; Security deposits ($1,350 total) are shown as <em>Deposits / Liability</em> — they are refundable and excluded from Net P&L.
         &nbsp;|&nbsp; Operating Income = Rent + App Fees + Storage only ($3,950). Net P&L is based on operating income vs expenses.
-        &nbsp;|&nbsp; May 2026: Geethika moved out — Shanik Woodson's lease has not started yet (app fee + deposit received only).
+        &nbsp;|&nbsp; May 2026: Geethika moved out (deep cleaning $589.04) — Shanik Woodson moved in May 28 (partial rent $283 for May 28–31, app fee + deposit received).
     </div>
 
     <!-- KPI Cards -->
@@ -748,7 +749,7 @@
                         <th>Deposits ⚠</th>
                         <th>Mortgage</th>
                         <th title="Gas + Electricity + Internet">Utilities ℹ</th>
-                        <th title="Home Setup + Maintenance + Background Check">Other Exp. ℹ</th>
+                        <th title="Home Setup + Maintenance + Background Check + Cleaning">Other Exp. ℹ</th>
                         <th>Total Exp.</th>
                         <th>Net P&amp;L</th>
                     </tr>
@@ -779,7 +780,7 @@
 
         <!-- Assumption note -->
         <div style="background:linear-gradient(90deg,#fffbeb,#fff8f0);border:1px solid #fde68a;border-left:4px solid #f59e0b;border-radius:10px;padding:11px 16px;font-size:12.5px;color:#92400e;margin-bottom:18px;line-height:1.7;">
-            <strong>Assumptions used:</strong>&nbsp; Monthly rent = $2,200 &nbsp;·&nbsp; Mortgage = $1,887.36/mo (fixed) &nbsp;·&nbsp; Utilities paid by tenant &nbsp;·&nbsp; No other major expenses &nbsp;·&nbsp; Starting deficit = <strong>$9,973.40</strong> (Dec 2025 – May 2026 losses)
+            <strong>Assumptions used:</strong>&nbsp; Monthly rent = $2,200 &nbsp;·&nbsp; Mortgage = $1,887.36/mo (fixed) &nbsp;·&nbsp; Utilities paid by tenant &nbsp;·&nbsp; No other major expenses &nbsp;·&nbsp; Starting deficit = <strong id="assumptionNoteDeficit">—</strong> (Dec 2025 – Jun 2026 losses)
         </div>
 
         <!-- 4 KPI cards -->
@@ -839,7 +840,7 @@
                     </table>
                 </div>
                 <div style="margin-top:10px;font-size:11px;color:#94a3b8;">
-                    Cumulative P&L carries forward from the −$9,973.40 historical deficit. Break-even reached in January 2029 (month 32).
+                    Cumulative P&L carries forward from the historical deficit. Break-even month is dynamically calculated above based on actual data.
                 </div>
             </div>
         </div>
@@ -867,22 +868,23 @@
 <script>
     // ── Data ──────────────────────────────────────────────────────────────────
 
-    const months = ['Dec 2025', 'Jan 2026', 'Feb 2026', 'Mar 2026', 'Apr 2026', 'May 2026'];
+    const months = ['Dec 2025', 'Jan 2026', 'Feb 2026', 'Mar 2026', 'Apr 2026', 'May 2026', 'Jun 2026'];
 
     const income = {
-        rent:     [800,   750,   750,   750,   750,   0],
-        other:    [55,    0,     40,    0,     0,     55],    // operating: app fees + storage only
-        deposits: [250,   0,     0,     0,     0,     1100],  // liability: security deposits
+        rent:     [800,   750,   750,   750,   750,   283,   0],
+        other:    [55,    0,     40,    0,     0,     55,    0],    // operating: app fees + storage only
+        deposits: [250,   0,     0,     0,     0,     1100,  0],   // liability: security deposits
     };
 
     const exp = {
-        mortgage:    [0,       1887.36, 1887.36, 1887.36, 1887.36, 1887.36],
-        gas:         [0,       272.43,  248.89,  157.00,  157.00,  157.00],
-        electricity: [0,       97.70,   128.58,  62.00,   62.00,   62.00],
-        internet:    [40.00,   40.00,   40.00,   40.00,   40.00,   40.00],
-        homeSetup:   [1764.71, 0,       529.26,  0,       0,       0],      // appliances, furniture, equipment
-        maintenance: [0,       468.03,  0,       0,       0,       0],      // contractor payment only
-        bgCheck:     [40.00,   0,       0,       0,       0,       40.00],  // tenant background checks
+        mortgage:    [0,       1887.36, 1887.36, 1887.36, 1887.36, 1887.36, 0],
+        gas:         [0,       272.43,  248.89,  157.00,  157.00,  157.00,  0],
+        electricity: [0,       97.70,   128.58,  62.00,   62.00,   62.00,   0],
+        internet:    [40.00,   40.00,   40.00,   40.00,   40.00,   40.00,   40.00],
+        homeSetup:   [1764.71, 0,       529.26,  0,       0,       0,       0],     // appliances, furniture, equipment
+        maintenance: [0,       468.03,  0,       0,       0,       0,       0],     // contractor payment only
+        bgCheck:     [40.00,   0,       0,       0,       0,       40.00,   0],     // tenant background checks
+        cleaning:    [0,       0,       0,       0,       0,       589.04,  0],     // move-out deep cleaning
     };
 
     const catColors = {
@@ -893,6 +895,7 @@
         homeSetup:   '#10b981',
         maintenance: '#f43f5e',
         bgCheck:     '#94a3b8',
+        cleaning:    '#06b6d4',
     };
 
     const catLabels = {
@@ -903,6 +906,7 @@
         homeSetup:   'Home Setup',
         maintenance: 'Maintenance',
         bgCheck:     'Background Check',
+        cleaning:    'Cleaning',
     };
 
     const operatingIncome = months.map((_, i) => income.rent[i] + income.other[i]);
@@ -948,12 +952,14 @@
         ['  · Rent:                  $750.00', '  · Storage Room:         $40.00'],
         ['  · Rent:                  $750.00'],
         ['  · Rent:                  $750.00'],
-        ['  · No rent (transition)', '  · App Fee (Shanik):     $55.00'],
+        ['  · Rent (May 28–31):      $283.00', '  · App Fee (Shanik):     $55.00'],
+        ['  · No rent received (Jun 2026)'],
     ];
     const depositBreakdown = [
         ['  · Geethika (Dec 2025):          $250.00'],
         [], [], [], [],
         ['  · Shanik Woodson (May 2026): $1,100.00'],
+        [],
     ];
 
     new Chart(document.getElementById('incomeVsExpenses'), {
@@ -1026,6 +1032,7 @@
                                 if (exp.homeSetup[i]   > 0) lines.push(`  · Home Setup:        $${exp.homeSetup[i].toFixed(2)}`);
                                 if (exp.maintenance[i] > 0) lines.push(`  · Maintenance:       $${exp.maintenance[i].toFixed(2)}`);
                                 if (exp.bgCheck[i]     > 0) lines.push(`  · Background Check:  $${exp.bgCheck[i].toFixed(2)}`);
+                                if (exp.cleaning[i]    > 0) lines.push(`  · Cleaning:          $${exp.cleaning[i].toFixed(2)}`);
                                 return lines;
                             }
                             return ` $${ctx.parsed.y.toFixed(2)}`;
@@ -1103,6 +1110,10 @@
             html += ttRow('Geethika (Dec 2025)', '$40.00');
             html += ttRow('Shanik Woodson (May 2026)', '$40.00');
         }
+        if (dp.label === 'Cleaning') {
+            html += ttSection('Move-out Deep Cleaning');
+            html += ttRow('Deep Clean — May 2026 (Geethika move-out)', '$589.04');
+        }
 
         // Render off-screen first to measure height
         expTooltipEl.innerHTML = html;
@@ -1158,7 +1169,7 @@
 
     // ── Chart 3: Income Donut ────────────────────────────────────────────────
 
-    const incomeData   = [3800, 40, 110, 1350];
+    const incomeData   = [4083, 40, 110, 1350];
     const incomeLabels = ['Rent', 'Storage Room', 'Application Fees', 'Deposits (Liability)'];
     const incomeColors = ['#22c55e', '#0ea5e9', '#f59e0b', '#6366f1'];
     const incomeTotalAll = incomeData.reduce((a, b) => a + b, 0);
@@ -1191,11 +1202,12 @@
                             if (ctx.label === 'Rent') {
                                 return [
                                     ` Total Rent: $${ctx.parsed.toFixed(2)} (${pct}%)`,
-                                    '   · Dec 2025:        $800.00',
-                                    '   · Jan 2026:        $750.00',
-                                    '   · Feb 2026:        $750.00',
-                                    '   · Mar 2026:        $750.00',
-                                    '   · Apr 2026:        $750.00',
+                                    '   · Dec 2025:               $800.00',
+                                    '   · Jan 2026:               $750.00',
+                                    '   · Feb 2026:               $750.00',
+                                    '   · Mar 2026:               $750.00',
+                                    '   · Apr 2026:               $750.00',
+                                    '   · May 2026 (28–31):       $283.00',
                                 ];
                             }
                             if (ctx.label === 'Storage Room') {
@@ -1261,6 +1273,7 @@
         '',
         '',
         'App Fee — Shanik Woodson: $55.00',
+        '',
     ];
 
     months.forEach((m, i) => {
@@ -1270,8 +1283,8 @@
         const net       = netPnL[i];
         const utilities = exp.gas[i] + exp.electricity[i] + exp.internet[i];
         const utilTip   = `Gas: ${fmt(exp.gas[i])}  |  Electricity: ${fmt(exp.electricity[i])}  |  Internet: ${fmt(exp.internet[i])}`;
-        const otherExp  = exp.homeSetup[i] + exp.maintenance[i] + exp.bgCheck[i];
-        const otherTip  = `Home Setup: ${fmt(exp.homeSetup[i])}  |  Maintenance: ${fmt(exp.maintenance[i])}  |  Background Check: ${fmt(exp.bgCheck[i])}`;
+        const otherExp  = exp.homeSetup[i] + exp.maintenance[i] + exp.bgCheck[i] + exp.cleaning[i];
+        const otherTip  = `Home Setup: ${fmt(exp.homeSetup[i])}  |  Maintenance: ${fmt(exp.maintenance[i])}  |  Background Check: ${fmt(exp.bgCheck[i])}  |  Cleaning: ${fmt(exp.cleaning[i])}`;
 
         const r = document.createElement('tr');
         r.innerHTML = `
@@ -1296,8 +1309,8 @@
     const totNet = sumArr(netPnL);
     const totUtil     = sumArr(exp.gas) + sumArr(exp.electricity) + sumArr(exp.internet);
     const totUtilTip  = `Gas: $${sumArr(exp.gas).toFixed(2)}  |  Electricity: $${sumArr(exp.electricity).toFixed(2)}  |  Internet: $${sumArr(exp.internet).toFixed(2)}`;
-    const totOther    = sumArr(exp.homeSetup) + sumArr(exp.maintenance) + sumArr(exp.bgCheck);
-    const totOtherTip = `Home Setup: $${sumArr(exp.homeSetup).toFixed(2)}  |  Maintenance: $${sumArr(exp.maintenance).toFixed(2)}  |  Background Check: $${sumArr(exp.bgCheck).toFixed(2)}`;
+    const totOther    = sumArr(exp.homeSetup) + sumArr(exp.maintenance) + sumArr(exp.bgCheck) + sumArr(exp.cleaning);
+    const totOtherTip = `Home Setup: $${sumArr(exp.homeSetup).toFixed(2)}  |  Maintenance: $${sumArr(exp.maintenance).toFixed(2)}  |  Background Check: $${sumArr(exp.bgCheck).toFixed(2)}  |  Cleaning: $${sumArr(exp.cleaning).toFixed(2)}`;
     const tr = document.createElement('tr');
     tr.className = 'total-row';
     tr.innerHTML = `
@@ -1329,6 +1342,7 @@
     const beYears  = Math.floor(breakEvenMonths / 12);
     const beMos    = breakEvenMonths % 12;
 
+    document.getElementById('assumptionNoteDeficit').textContent = '$' + kpiAbs(Math.abs(startDeficit));
     document.getElementById('kpi-a-surplus').textContent   = `+$${monthlySurplus.toFixed(2)}`;
     document.getElementById('kpi-a-deficit').textContent   = `$${kpiAbs(Math.abs(startDeficit))}`;
     document.getElementById('kpi-a-deficit-sub').innerHTML = `All losses from ${months[0]} – ${months[months.length - 1]}`;
