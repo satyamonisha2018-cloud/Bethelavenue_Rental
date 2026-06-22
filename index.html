@@ -653,8 +653,9 @@
 
     <!-- Note -->
     <div class="note-box">
-        <strong>Note:</strong>&nbsp; Security deposits ($1,350 total) are shown as <em>Deposits / Liability</em> — they are refundable and excluded from Net P&L.
-        &nbsp;|&nbsp; Operating Income = Rent + App Fees + Storage only ($3,950). Net P&L is based on operating income vs expenses.
+        <strong>Note:</strong>&nbsp; Security deposits ($1,100 — Shanik Woodson only) are shown as <em>Deposits / Liability</em> — they are refundable and excluded from Net P&L.
+        Geethika's $250 deposit was <strong>retained</strong> (not returned) and is counted as income.
+        &nbsp;|&nbsp; Operating Income = Rent + App Fees + Storage + Retained Deposit. Net P&L is based on operating income vs expenses.
         &nbsp;|&nbsp; May 2026: Geethika moved out (deep cleaning $589.04) — Shanik Woodson moved in May 28 (partial rent $283 for May 28–31, app fee + deposit received).
     </div>
 
@@ -670,7 +671,7 @@
             <div class="kpi-bg-icon">🔒</div>
             <div class="kpi-label">Deposits / Liability</div>
             <div class="kpi-value" id="kpi-deposits">—</div>
-            <div class="kpi-sub">Refundable · not profit</div>
+            <div class="kpi-sub">Shanik only · refundable</div>
         </div>
         <div class="kpi-card teal">
             <div class="kpi-bg-icon">🏦</div>
@@ -873,7 +874,8 @@
     const income = {
         rent:     [800,   750,   750,   750,   750,   283,   0],
         other:    [55,    0,     40,    0,     0,     55,    0],    // operating: app fees + storage only
-        deposits: [250,   0,     0,     0,     0,     1100,  0],   // liability: security deposits
+        retained: [250,   0,     0,     0,     0,     0,     0],   // retained deposits (kept, not returned)
+        deposits: [0,     0,     0,     0,     0,     1100,  0],   // liability: refundable deposits only
     };
 
     const exp = {
@@ -909,7 +911,7 @@
         cleaning:    'Cleaning',
     };
 
-    const operatingIncome = months.map((_, i) => income.rent[i] + income.other[i]);
+    const operatingIncome = months.map((_, i) => income.rent[i] + income.other[i] + income.retained[i]);
     const depositsArr     = income.deposits;
     const totalCash       = months.map((_, i) => operatingIncome[i] + depositsArr[i]);
     const totalExpense    = months.map((_, i) =>
@@ -947,7 +949,7 @@
     // ── Chart 1: Income vs Expenses — stacked income groups ──────────────────
 
     const operatingBreakdown = [
-        ['  · Rent:                  $800.00', '  · App Fee (Geethika):   $55.00'],
+        ['  · Rent:                  $800.00', '  · App Fee (Geethika):   $55.00', '  · Retained Deposit:      $250.00'],
         ['  · Rent:                  $750.00'],
         ['  · Rent:                  $750.00', '  · Storage Room:         $40.00'],
         ['  · Rent:                  $750.00'],
@@ -956,7 +958,7 @@
         ['  · No rent received (Jun 2026)'],
     ];
     const depositBreakdown = [
-        ['  · Geethika (Dec 2025):          $250.00'],
+        [],
         [], [], [], [],
         ['  · Shanik Woodson (May 2026): $1,100.00'],
         [],
@@ -1169,9 +1171,9 @@
 
     // ── Chart 3: Income Donut ────────────────────────────────────────────────
 
-    const incomeData   = [4083, 40, 110, 1350];
-    const incomeLabels = ['Rent', 'Storage Room', 'Application Fees', 'Deposits (Liability)'];
-    const incomeColors = ['#22c55e', '#0ea5e9', '#f59e0b', '#6366f1'];
+    const incomeData   = [4083, 40, 110, 250, 1100];
+    const incomeLabels = ['Rent', 'Storage Room', 'Application Fees', 'Retained Deposit', 'Deposits (Liability)'];
+    const incomeColors = ['#22c55e', '#0ea5e9', '#f59e0b', '#f97316', '#6366f1'];
     const incomeTotalAll = incomeData.reduce((a, b) => a + b, 0);
 
     new Chart(document.getElementById('incomeDonut'), {
@@ -1223,11 +1225,17 @@
                                     '   · Shanik Woodson (May 2026): $55.00',
                                 ];
                             }
+                            if (ctx.label === 'Retained Deposit') {
+                                return [
+                                    ` Retained Deposit: $${ctx.parsed.toFixed(2)} (${pct}%)`,
+                                    '   · Geethika (Dec 2025): $250.00',
+                                    '   ✓ Kept by Noor Properties — counted as income',
+                                ];
+                            }
                             if (ctx.label === 'Deposits (Liability)') {
                                 return [
                                     ` Deposits (Liability): $${ctx.parsed.toFixed(2)} (${pct}%)`,
                                     '   ⚠  Refundable — NOT counted as profit',
-                                    '   · Geethika (Dec 2025):       $250.00',
                                     '   · Shanik Woodson (May 2026): $1,100.00',
                                 ];
                             }
@@ -1262,12 +1270,12 @@
     document.getElementById('kpi-net-pl').textContent     = kpiFmt(kpiNetPL);
 
     document.getElementById('kpi-op-income-sub').innerHTML =
-        `Rent $${kpiAbs(sumArr(income.rent))} · Other $${kpiAbs(sumArr(income.other))}`;
+        `Rent $${kpiAbs(sumArr(income.rent))} · Other $${kpiAbs(sumArr(income.other) + sumArr(income.retained))}`;
     document.getElementById('kpi-total-exp-sub').innerHTML =
         `All operating costs<br>${months[0]} – ${months[months.length - 1]}`;
 
     const otherIncomeTip = [
-        'App Fee — Geethika: $55.00',
+        'App Fee — Geethika: $55.00  |  Retained Deposit (Geethika): $250.00',
         '',
         'Storage Room (Feb only): $40.00',
         '',
@@ -1286,11 +1294,12 @@
         const otherExp  = exp.homeSetup[i] + exp.maintenance[i] + exp.bgCheck[i] + exp.cleaning[i];
         const otherTip  = `Home Setup: ${fmt(exp.homeSetup[i])}  |  Maintenance: ${fmt(exp.maintenance[i])}  |  Background Check: ${fmt(exp.bgCheck[i])}  |  Cleaning: ${fmt(exp.cleaning[i])}`;
 
+        const otherIncomeVal = income.other[i] + income.retained[i];
         const r = document.createElement('tr');
         r.innerHTML = `
             <td>${m}</td>
             <td class="${income.rent[i] > 0 ? 'pos' : 'dim'}">${fmt(income.rent[i])}</td>
-            <td class="${income.other[i] > 0 ? 'pos' : 'dim'}" ${income.other[i] > 0 ? `title="${otherIncomeTip[i]}" style="cursor:help;"` : ''}>${fmt(income.other[i])}</td>
+            <td class="${otherIncomeVal > 0 ? 'pos' : 'dim'}" ${otherIncomeVal > 0 ? `title="${otherIncomeTip[i]}" style="cursor:help;"` : ''}>${otherIncomeVal > 0 ? '$' + otherIncomeVal.toFixed(2) : '—'}</td>
             <td class="pos">$${opInc.toFixed(2)}</td>
             <td style="color:${dep > 0 ? '#6366f1' : '#cbd5e1'};font-weight:${dep > 0 ? '700' : '400'};">${dep > 0 ? '$' + dep.toFixed(2) : '—'}</td>
             <td class="${exp.mortgage[i] > 0 ? '' : 'dim'}">${fmt(exp.mortgage[i])}</td>
@@ -1316,7 +1325,7 @@
     tr.innerHTML = `
         <td>TOTAL</td>
         <td class="pos">$${sumArr(income.rent).toFixed(2)}</td>
-        <td class="pos">$${sumArr(income.other).toFixed(2)}</td>
+        <td class="pos">$${(sumArr(income.other) + sumArr(income.retained)).toFixed(2)}</td>
         <td class="pos">$${totOp.toFixed(2)}</td>
         <td style="color:#6366f1;font-weight:700;">$${totDep.toFixed(2)}</td>
         <td>$${sumArr(exp.mortgage).toFixed(2)}</td>
